@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Management Console - ExamCloud Pro</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .border-dashed {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.3s ease;
+        }
+        .border-dashed:hover {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.04);
+        }
+        .option-row {
+            background-color: var(--bs-tertiary-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <aside class="col-12 col-md-3 col-xl-2 px-sm-2 px-0 sidebar d-flex flex-column">
+            <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 text-white min-vh-100 w-100">
+                <a href="#" class="d-flex align-items-center pb-3 mb-md-3 me-md-auto text-decoration-none">
+                    <span class="fs-4 fw-bold text-primary"><i class="bi bi-cloud-check-fill me-2"></i>ExamCloud</span>
+                </a>
+                <hr class="w-100 text-secondary">
+                <ul class="nav nav-pills flex-column mb-auto w-100" id="menu">
+                    <li class="nav-item mb-2">
+                        <a href="#" class="nav-link active align-middle px-3 py-2.5" id="tab-overview-btn" onclick="switchTab('overview')">
+                            <i class="bi bi-speedometer2 me-2"></i> <span>Console Overview</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="#" class="nav-link align-middle px-3 py-2.5" id="tab-qbank-btn" onclick="switchTab('qbank')">
+                            <i class="bi bi-folder2-open me-2"></i> <span>Question Repository</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="#" class="nav-link align-middle px-3 py-2.5" id="tab-scheduling-btn" onclick="switchTab('scheduling')">
+                            <i class="bi bi-calendar-event me-2"></i> <span>Test Engine</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="#" class="nav-link align-middle px-3 py-2.5" id="tab-roster-btn" onclick="switchTab('roster')">
+                            <i class="bi bi-people me-2"></i> <span>Student Roster</span>
+                        </a>
+                    </li>
+                </ul>
+                <hr class="w-100 text-secondary">
+                
+                <!-- Bottom Global Configs -->
+                <div class="w-100 pb-4">
+                    <button class="btn btn-outline-secondary w-100 mb-3" onclick="toggleTheme()">
+                        <i class="bi bi-brightness-high text-warning me-2"></i> <span>Toggle Mode</span>
+                    </button>
+                    <a th:href="@{/auth/logout}" class="btn btn-danger w-100">
+                        <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="col-12 col-md-9 col-xl-10 py-4 px-4">
+            <!-- Workspace Header -->
+            <header class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center border-bottom pb-3 mb-4 gap-2">
+                <div>
+                    <h1 class="h2 fw-bold mb-1" th:text="'Faculty: ' + ${faculty.name}">Faculty Control Center</h1>
+                    <p class="text-muted small mb-0">System performance analytics & assessment console</p>
+                </div>
+                <div class="badge bg-primary bg-opacity-10 text-primary p-2.5 rounded-3 d-flex align-items-center">
+                    <i class="bi bi-shield-check me-2"></i> Instructor Status: Active
+                </div>
+            </header>
+
+            <!-- Metric KPI Strips -->
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-sm-4">
+                    <div class="card p-3 shadow-sm border-0 bg-primary bg-opacity-10 text-primary">
+                        <h6 class="text-uppercase text-muted small fw-bold">MCQ Bank Size</h6>
+                        <h3 class="fw-bold mb-0" th:text="${questions.size()}">0</h3>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="card p-3 shadow-sm border-0 bg-purple bg-opacity-10 text-purple" style="color: var(--accent-purple); background-color: rgba(139, 92, 246, 0.1) !important;">
+                        <h6 class="text-uppercase text-muted small fw-bold">Coding Challenges</h6>
+                        <h3 class="fw-bold mb-0" th:text="${codingQuestions.size()}">0</h3>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-4">
+                    <div class="card p-3 shadow-sm border-0 bg-success bg-opacity-10 text-success">
+                        <h6 class="text-uppercase text-muted small fw-bold">Scheduled Assessments</h6>
+                        <h3 class="fw-bold mb-0" th:text="${scheduledTests.size()}">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 1: Overview Dashboard -->
+            <section id="panel-overview">
+                <div class="card shadow-sm border-0 p-4">
+                    <h4 class="fw-bold mb-3">Recent Faculty Operations</h4>
+                    <p class="text-muted">Welcome to the assessment suite. Navigate the repository to configure your questions bank, schedule targeted exam sessions, and track scholar completion metrics.</p>
+                    
+                    <div class="row g-4 mt-2">
+                        <div class="col-12 col-md-4">
+                            <div class="card bg-body-tertiary border-0 p-3 h-100">
+                                <h5 class="fw-semibold mb-2"><i class="bi bi-patch-plus text-primary me-2"></i>Question Formulation</h5>
+                                <p class="text-muted small mb-3">Formulate standard MCQs with dynamic choices, or import coding problems from LeetCode, HackerRank, and CodeChef.</p>
+                                <button class="btn btn-sm btn-outline-primary mt-auto align-self-start" onclick="switchTab('qbank')">Go to Question Bank</button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="card bg-body-tertiary border-0 p-3 h-100">
+                                <h5 class="fw-semibold mb-2"><i class="bi bi-send-check text-success me-2"></i>Test Engine Configurator</h5>
+                                <p class="text-muted small mb-3">Deploy custom academic assessments to all scholars or select targeted individuals.</p>
+                                <button class="btn btn-sm btn-outline-success mt-auto align-self-start" onclick="switchTab('scheduling')">Deploy Exam</button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="card bg-body-tertiary border-0 p-3 h-100">
+                                <h5 class="fw-semibold mb-2"><i class="bi bi-people-fill text-info me-2"></i>Scholar Telemetry</h5>
+                                <p class="text-muted small mb-3">Review completion rates, connected coding accounts, platform streak statistics, and historical reports.</p>
+                                <button class="btn btn-sm btn-outline-info mt-auto align-self-start" onclick="switchTab('roster')">View Roster</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel 2: Question Repository -->
+            <section id="panel-qbank" class="d-none">
+                <div class="row g-4">
+                    <!-- Formulation Form -->
+                    <div class="col-12 col-lg-5">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h4 class="fw-bold mb-3"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Problem Formulation</h4>
+                            
+                            <!-- Toggle MCQ vs Coding -->
+                            <div class="btn-group w-100 mb-4" role="group" aria-label="Question type toggle">
+                                <button type="button" class="btn btn-outline-primary fw-semibold active" id="btn-toggle-mcq" onclick="toggleFormType('MCQ')"><i class="bi bi-file-earmark-text me-1"></i>MCQ / Stem</button>
+                                <button type="button" class="btn btn-outline-primary fw-semibold" id="btn-toggle-coding" onclick="toggleFormType('CODING')"><i class="bi bi-code-slash me-1"></i>Coding Challenge</button>
+                            </div>
+
+                            <!-- Form A: MCQ Question Creation -->
+                            <div id="mcq-form-container">
+                                <form th:action="@{/faculty/create-question}" method="POST">
+                                    <input type="hidden" name="questionType" value="MCQ">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Problem Stem / Question Text</label>
+                                        <textarea class="form-control" name="questionText" rows="3" placeholder="What is the runtime complexity of a binary search operation?" required></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Subject Category</label>
+                                        <select class="form-select" name="subject" required>
+                                            <option value="Java">Java Core Programming</option>
+                                            <option value="JavaScript">JavaScript Basics & Async</option>
+                                            <option value="Python">Python Core & Automation</option>
+                                            <option value="Spring Boot">Spring Boot MVC & JPA</option>
+                                            <option value="MySQL">MySQL Database Relational</option>
+                                            <option value="DSA">DSA & Problem Solving</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-medium">Difficulty Level</label>
+                                            <select class="form-select" name="difficulty" required>
+                                                <option value="Easy">Easy</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="Hard">Hard</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-medium">Marks Value</label>
+                                            <input type="number" name="marks" class="form-control" value="1" min="1" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Topic Tags</label>
+                                        <input type="text" name="topic" class="form-control" placeholder="OOP, Complexity, Collections">
+                                    </div>
+
+                                    <!-- Standard Options Builder -->
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Choice Options</label>
+                                        <div class="mb-2"><input type="text" name="optionA" class="form-control" placeholder="Option A Text" required></div>
+                                        <div class="mb-2"><input type="text" name="optionB" class="form-control" placeholder="Option B Text" required></div>
+                                        <div class="mb-2"><input type="text" name="optionC" class="form-control" placeholder="Option C Text" required></div>
+                                        <div class="mb-2"><input type="text" name="optionD" class="form-control" placeholder="Option D Text" required></div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label text-muted small fw-medium">Correct Choice Answer</label>
+                                        <select class="form-select" name="correctOption" required>
+                                            <option value="A">Option A</option>
+                                            <option value="B">Option B</option>
+                                            <option value="C">Option C</option>
+                                            <option value="D">Option D</option>
+                                        </select>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 py-2.5 fw-semibold shadow-sm"><i class="bi bi-save me-1"></i> Seed MCQ to Repository</button>
+                                </form>
+                            </div>
+
+                            <!-- Form B: Coding Challenge Creation -->
+                            <div id="coding-form-container" class="d-none">
+                                <form th:action="@{/faculty/create-question}" method="POST">
+                                    <input type="hidden" name="questionType" value="CODING">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Challenge Title</label>
+                                        <input type="text" name="title" class="form-control" placeholder="Two Sum" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Target Platform</label>
+                                        <select class="form-select" name="platform" required>
+                                            <option value="LeetCode">LeetCode</option>
+                                            <option value="HackerRank">HackerRank</option>
+                                            <option value="CodeChef">CodeChef</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">Direct Platform URL Link</label>
+                                        <input type="url" name="problemLink" class="form-control" placeholder="https://leetcode.com/problems/two-sum/" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-medium">SubjectCategory</label>
+                                        <select class="form-select" name="subject" required>
+                                            <option value="Java">Java Core Programming</option>
+                                            <option value="JavaScript">JavaScript Basics & Async</option>
+                                            <option value="Python">Python Core & Automation</option>
+                                            <option value="Spring Boot">Spring Boot MVC & JPA</option>
+                                            <option value="MySQL">MySQL Database Relational</option>
+                                            <option value="DSA">DSA & Problem Solving</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-medium">Difficulty</label>
+                                            <select class="form-select" name="difficulty" required>
+                                                <option value="Easy">Easy</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="Hard">Hard</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label text-muted small fw-medium">Points Weight</label>
+                                            <input type="number" name="score" class="form-control" value="10" min="1" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="form-label text-muted small fw-medium">Topic Tags</label>
+                                        <input type="text" name="topic" class="form-control" placeholder="Arrays, Dynamic Programming, Hashing">
+                                    </div>
+
+                                    <button type="submit" class="btn btn-purple w-100 py-2.5 fw-semibold shadow-sm" style="background-color: #8b5cf6 !important; border-color: #8b5cf6 !important; color: white;"><i class="bi bi-code-square me-1"></i> Commit Coding Challenge</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Question Bank & CSV Import -->
+                    <div class="col-12 col-lg-7">
+                        <!-- CSV Import Card -->
+                        <div class="card shadow-sm border-0 p-4 mb-4">
+                            <h4 class="fw-bold mb-1"><i class="bi bi-filetype-csv text-success me-2"></i>MCQ Spreadsheet Parser (CSV)</h4>
+                            <p class="text-muted small">Drag-and-drop a `.csv` question sheet file, or paste your raw CSV rows inside the textarea below. Submit to parse and seed immediately.</p>
+                            
+                            <!-- Drag and Drop Overlay Area -->
+                            <div class="border-dashed p-4 text-center mb-3" id="drop-zone" style="cursor: pointer;">
+                                <i class="bi bi-cloud-upload-fill text-success fs-2 mb-2"></i>
+                                <h6 class="fw-semibold">Select or Drop CSV Document</h6>
+                                <p class="text-muted small mb-0">Format: `Question,Difficulty,OptionA,OptionB,OptionC,OptionD,CorrectOption,Subject,Topic`</p>
+                                <input type="file" id="csv-file-picker" accept=".csv" class="d-none">
+                            </div>
+
+                            <form th:action="@{/faculty/import-csv}" method="POST">
+                                <div class="mb-3">
+                                    <textarea class="form-control font-monospace small" id="csv-text-area" name="csvContent" rows="4" placeholder="Reverse a String,Easy,gnirtS,Reverse,gnirts,str,A,Java,Strings" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 py-2"><i class="bi bi-check-circle me-1"></i> Parse and Import Spreadsheet MCQs</button>
+                            </form>
+                        </div>
+
+                        <!-- Active MCQs Bank -->
+                        <div class="card shadow-sm border-0 p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="fw-bold mb-0">Active MCQs Bank Cache</h4>
+                                <a th:href="@{/faculty/export-csv}" class="btn btn-sm btn-outline-info rounded-pill px-3"><i class="bi bi-download me-1"></i>Export Java CSV</a>
+                            </div>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Stem & Subject</th>
+                                            <th>Difficulty</th>
+                                            <th>Marks</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${questions.isEmpty()}">
+                                            <td colspan="4" class="text-center py-4 text-muted">No MCQs in repository bank.</td>
+                                        </tr>
+                                        <tr th:each="q : ${questions}">
+                                            <td>
+                                                <strong th:text="${q.question}">Question Stem</strong>
+                                                <div class="text-muted small" th:text="${q.subject} + ' | ' + ${q.topic}">Subject</div>
+                                            </td>
+                                            <td><span class="badge bg-secondary" th:text="${q.difficulty}">Easy</span></td>
+                                            <td th:text="${q.marks}">1</td>
+                                            <td>
+                                                <form th:action="@{/faculty/delete-question}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="questionId" th:value="${q.id}">
+                                                    <input type="hidden" name="questionType" value="MCQ">
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger px-2.5 py-1 rounded-pill small" onclick="return confirm('Are you sure you want to delete this MCQ?')"><i class="bi-trash"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Active Coding Challenges Bank -->
+                        <div class="card shadow-sm border-0 p-4">
+                            <h4 class="fw-bold mb-3">Active Coding Challenges Bank</h4>
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Title & Subject</th>
+                                            <th>Platform</th>
+                                            <th>Difficulty</th>
+                                            <th>Score</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${codingQuestions.isEmpty()}">
+                                            <td colspan="5" class="text-center py-4 text-muted">No coding challenges found in repository.</td>
+                                        </tr>
+                                        <tr th:each="c : ${codingQuestions}">
+                                            <td>
+                                                <strong th:text="${c.title}">Title</strong>
+                                                <div class="text-muted small" th:text="${c.subject} + ' | ' + ${c.topic}">Subject</div>
+                                            </td>
+                                            <td><span class="badge bg-purple" th:text="${c.platform}">LeetCode</span></td>
+                                            <td><span class="badge bg-secondary" th:text="${c.difficulty}">Medium</span></td>
+                                            <td th:text="${c.score}">10</td>
+                                            <td>
+                                                <form th:action="@{/faculty/delete-question}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="questionId" th:value="${c.id}">
+                                                    <input type="hidden" name="questionType" value="CODING">
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger px-2.5 py-1 rounded-pill small" onclick="return confirm('Are you sure you want to delete this Coding Challenge?')"><i class="bi-trash"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel 3: Test Engine Deployments -->
+            <section id="panel-scheduling" class="d-none">
+                <div class="row g-4">
+                    <!-- Scheduler Form -->
+                    <div class="col-12 col-lg-5">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h4 class="fw-bold mb-3"><i class="bi bi-rocket-takeoff text-success me-2"></i>Schedule Mock Assessment</h4>
+                            
+                            <form th:action="@{/faculty/schedule-test}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-medium">Test Session Title</label>
+                                    <input type="text" name="title" class="form-control" placeholder="Midterm Java Programming Mock" required>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-medium">Duration (Minutes)</label>
+                                        <input type="number" name="duration" class="form-control" value="30" min="5" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted small fw-medium">Total Marks</label>
+                                        <input type="number" name="totalMarks" class="form-control" value="10" min="1" required>
+                                    </div>
+                                </div>
+
+                                <!-- Checklist of MCQs -->
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-medium">Select Questions for Test</label>
+                                    <div class="card bg-dark bg-opacity-25 p-2" style="max-height: 200px; overflow-y: auto;">
+                                        <div th:each="q : ${questions}" class="form-check mb-1">
+                                            <input class="form-check-input" type="checkbox" name="questionIds" th:value="${q.id}" th:id="'qcheck_' + ${q.id}">
+                                            <label class="form-check-label small" th:for="'qcheck_' + ${q.id}">
+                                                <span th:text="${q.question}">Question</span> <span class="badge bg-secondary px-1.5 py-0.5" th:text="${q.subject}">Subject</span>
+                                            </label>
+                                        </div>
+                                        <div th:if="${questions.isEmpty()}" class="text-muted small text-center py-2">No MCQs in repository bank. Formulate some first!</div>
+                                    </div>
+                                </div>
+
+                                <!-- Checklist of Student Assignees -->
+                                <div class="mb-4">
+                                    <label class="form-label text-muted small fw-medium">Assign Students (leave empty for public to all)</label>
+                                    <div class="card bg-dark bg-opacity-25 p-2" style="max-height: 150px; overflow-y: auto;">
+                                        <div th:each="s : ${roster}" class="form-check mb-1">
+                                            <input class="form-check-input" type="checkbox" name="assignedStudentIds" th:value="${s.id}" th:id="'scheck_' + ${s.id}">
+                                            <label class="form-check-label small" th:for="'scheck_' + ${s.id}" th:text="${s.name} + ' (' + ${s.batch} + ')'">Student Name</label>
+                                        </div>
+                                        <div th:if="${roster.isEmpty()}" class="text-muted small text-center py-2">No students registered in roster.</div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-success w-100 py-2.5 fw-semibold shadow-sm"><i class="bi bi-send-check me-1"></i> Deploy Test Session</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Deployments list -->
+                    <div class="col-12 col-lg-7">
+                        <div class="card shadow-sm border-0 p-4">
+                            <h4 class="fw-bold mb-3">Active Assessment Deployments</h4>
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Title & Scope</th>
+                                            <th>Questions count</th>
+                                            <th>Marks</th>
+                                            <th>Duration</th>
+                                            <th>Target Roster</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${scheduledTests.isEmpty()}">
+                                            <td colspan="5" class="text-center py-4 text-muted">No scheduled tests found.</td>
+                                        </tr>
+                                        <tr th:each="t : ${scheduledTests}">
+                                            <td>
+                                                <strong th:text="${t.title}">Mock Exam</strong>
+                                                <div class="text-muted small" th:text="${t.questions.iterator().next()?.subject ?: 'General'}">Subject</div>
+                                            </td>
+                                            <td th:text="${t.questions.size()}">0</td>
+                                            <td th:text="${t.totalMarks}">10</td>
+                                            <td th:text="${t.duration} + ' Mins'">30 Mins</td>
+                                            <td>
+                                                <span class="badge bg-secondary" th:if="${t.assignedStudents.isEmpty()}">All Students</span>
+                                                <span class="badge bg-success" th:if="${!t.assignedStudents.isEmpty()}" th:text="${t.assignedStudents.size()} + ' Assigned'">0 Assigned</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel 4: Student Roster Telemetry -->
+            <section id="panel-roster" class="d-none">
+                <div class="card shadow-sm border-0 p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-people-fill text-info me-2"></i>Roster Completion Metrics Telemetry</h4>
+                    <p class="text-muted">Below is a list of registered students in your academic cluster, highlighting their linked global platform handles and solved coding questions tally.</p>
+
+                    <div class="table-responsive mt-3">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Student Scholar</th>
+                                    <th>Email Address</th>
+                                    <th>Batch Group</th>
+                                    <th>Linked Platform Profiles</th>
+                                    <th>Solved coding tally</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${roster.isEmpty()}">
+                                    <td colspan="5" class="text-center py-4 text-muted">No registered scholars in database.</td>
+                                </tr>
+                                <tr th:each="s : ${roster}">
+                                    <td><strong th:text="${s.name}">Student Name</strong></td>
+                                    <td th:text="${s.email}">student@email.com</td>
+                                    <td><span class="badge bg-secondary" th:text="${s.batch ?: 'Batch A'}">Batch A</span></td>
+                                    <td>
+                                        <span class="badge bg-warning bg-opacity-15 text-warning mb-1 d-inline-block" th:if="${s.leetcodeUsername}" th:text="'LC: ' + ${s.leetcodeUsername}">LC: handle</span>
+                                        <span class="badge bg-success bg-opacity-15 text-success mb-1 d-inline-block" th:if="${s.hackerrankUsername}" th:text="'HR: ' + ${s.hackerrankUsername}">HR: handle</span>
+                                        <span class="badge bg-danger bg-opacity-15 text-danger mb-1 d-inline-block" th:if="${s.codechefUsername}" th:text="'CC: ' + ${s.codechefUsername}">CC: handle</span>
+                                        <span class="text-muted small" th:if="${s.leetcodeUsername == null && s.hackerrankUsername == null && s.codechefUsername == null}">No accounts connected</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-purple px-3 py-2 fw-bold" style="background-color: rgba(139, 92, 246, 0.15) !important; color: #8b5cf6 !important;" th:text="${s.solvedCount} + ' Solves'">0 Solves</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Theme switching implementation
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    };
+
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    };
+
+    window.addEventListener('DOMContentLoaded', initTheme);
+
+    // Sidebar panel switches
+    function switchTab(tabName) {
+        document.getElementById('panel-overview').classList.add('d-none');
+        document.getElementById('panel-qbank').classList.add('d-none');
+        document.getElementById('panel-scheduling').classList.add('d-none');
+        document.getElementById('panel-roster').classList.add('d-none');
+
+        document.getElementById('tab-overview-btn').classList.remove('active');
+        document.getElementById('tab-qbank-btn').classList.remove('active');
+        document.getElementById('tab-scheduling-btn').classList.remove('active');
+        document.getElementById('tab-roster-btn').classList.remove('active');
+
+        if (tabName === 'overview') {
+            document.getElementById('panel-overview').classList.remove('d-none');
+            document.getElementById('tab-overview-btn').classList.add('active');
+        } else if (tabName === 'qbank') {
+            document.getElementById('panel-qbank').classList.remove('d-none');
+            document.getElementById('tab-qbank-btn').classList.add('active');
+        } else if (tabName === 'scheduling') {
+            document.getElementById('panel-scheduling').classList.remove('d-none');
+            document.getElementById('tab-scheduling-btn').classList.add('active');
+        } else if (tabName === 'roster') {
+            document.getElementById('panel-roster').classList.remove('d-none');
+            document.getElementById('tab-roster-btn').classList.add('active');
+        }
+    }
+
+    // Toggle problem formulation modes
+    function toggleFormType(type) {
+        if (type === 'MCQ') {
+            document.getElementById('mcq-form-container').classList.remove('d-none');
+            document.getElementById('coding-form-container').classList.add('d-none');
+            document.getElementById('btn-toggle-mcq').classList.add('active');
+            document.getElementById('btn-toggle-coding').classList.remove('active');
+        } else {
+            document.getElementById('mcq-form-container').classList.add('d-none');
+            document.getElementById('coding-form-container').classList.remove('d-none');
+            document.getElementById('btn-toggle-mcq').classList.remove('active');
+            document.getElementById('btn-toggle-coding').classList.add('active');
+        }
+    }
+
+    // Drag-and-drop CSV parser
+    const dropZone = document.getElementById('drop-zone');
+    const filePicker = document.getElementById('csv-file-picker');
+    const csvTextArea = document.getElementById('csv-text-area');
+
+    dropZone.addEventListener('click', () => filePicker.click());
+
+    filePicker.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleCSVFile(file);
+    });
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#10b981';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+        const file = e.dataTransfer.files[0];
+        if (file) handleCSVFile(file);
+    });
+
+    function handleCSVFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            csvTextArea.value = e.target.result;
+        };
+        reader.readAsText(file);
+    }
+</script>
+</body>
+</html>

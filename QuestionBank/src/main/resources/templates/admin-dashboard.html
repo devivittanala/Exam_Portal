@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Audit Control Console - ExamCloud Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .sidebar {
+            min-height: 100vh;
+            background-color: var(--bs-body-bg);
+            border-right: 1px solid var(--bs-border-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <aside class="col-12 col-md-3 col-xl-2 px-sm-2 px-0 sidebar d-flex flex-column">
+            <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-4 text-white min-vh-100 w-100">
+                <a href="#" class="d-flex align-items-center pb-3 mb-md-3 me-md-auto text-decoration-none">
+                    <span class="fs-4 fw-bold text-primary"><i class="bi bi-cloud-check-fill me-2"></i>ExamCloud</span>
+                </a>
+                <hr class="w-100 text-secondary">
+                <ul class="nav nav-pills flex-column mb-auto w-100" id="menu">
+                    <li class="nav-item mb-2">
+                        <!-- FIX 1: Use href="javascript:void(0)" or e.preventDefault() to stop page jump on click -->
+                        <a href="javascript:void(0)" class="nav-link active align-middle px-3 py-2" id="tab-overview-btn" onclick="switchTab('overview')">
+                            <i class="bi bi-speedometer2 me-2"></i> <span>Telemetry Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="javascript:void(0)" class="nav-link align-middle px-3 py-2" id="tab-user-mgmt-btn" onclick="switchTab('user-mgmt')">
+                            <i class="bi bi-person-gear me-2"></i> <span>User Roster Matrix</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a href="javascript:void(0)" class="nav-link align-middle px-3 py-2" id="tab-global-tests-btn" onclick="switchTab('global-tests')">
+                            <i class="bi bi-intersect me-2"></i> <span>Global Schedules</span>
+                        </a>
+                    </li>
+                </ul>
+                <hr class="w-100 text-secondary">
+
+                <!-- Bottom Global Configs -->
+                <div class="w-100 pb-4">
+                    <button class="btn btn-outline-secondary w-100 mb-3" onclick="toggleTheme()">
+                        <i class="bi bi-brightness-high text-warning me-2"></i> <span>Toggle Mode</span>
+                    </button>
+                    <a th:href="@{/auth/logout}" class="btn btn-danger w-100">
+                        <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="col-12 col-md-9 col-xl-10 py-4 px-4">
+            <!-- Workspace Header -->
+            <header class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center border-bottom pb-3 mb-4 gap-2">
+                <div>
+                    <h1 class="h2 fw-bold mb-1" th:text="${admin.name} + ' - SysAdmin Engine'">Platform Architecture Audit</h1>
+                    <p class="text-muted small mb-0">Enterprise administration controls &amp; telemetry monitoring</p>
+                </div>
+                <div class="badge bg-danger bg-opacity-10 text-danger p-2 rounded-3 d-flex align-items-center">
+                    <i class="bi bi-shield-lock-fill me-2"></i> ROOT PRIVILEGES ENABLED
+                </div>
+            </header>
+
+            <!-- Metrics Telemetry Grid -->
+            <!-- FIX 2: Removed invalid col-lg-2.4 class; use flex-fill with equal columns via row-cols -->
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-5 g-4 mb-4">
+                <div class="col">
+                    <div class="card h-100 p-3 shadow-sm border-0 bg-primary bg-opacity-10 text-primary">
+                        <h6 class="text-uppercase text-muted small fw-bold">Platform Profiles</h6>
+                        <h3 class="fw-bold mb-0" th:text="${totalUsers}">0</h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 p-3 shadow-sm border-0 bg-success bg-opacity-10 text-success">
+                        <h6 class="text-uppercase text-muted small fw-bold">Question Bank Size</h6>
+                        <h3 class="fw-bold mb-0" th:text="${totalQuestions}">0</h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 p-3 shadow-sm border-0 bg-info bg-opacity-10 text-info">
+                        <h6 class="text-uppercase text-muted small fw-bold">Total Test Schemes</h6>
+                        <h3 class="fw-bold mb-0" th:text="${totalTests}">0</h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 p-3 shadow-sm border-0 bg-warning bg-opacity-10 text-warning">
+                        <h6 class="text-uppercase text-muted small fw-bold">Completed Papers</h6>
+                        <h3 class="fw-bold mb-0" th:text="${completedTests}">0</h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100 p-3 shadow-sm border-0 bg-danger bg-opacity-10 text-danger">
+                        <h6 class="text-uppercase text-muted small fw-bold">System Cumulative Avg</h6>
+                        <h3 class="fw-bold mb-0" th:text="${averageScore} + '%'">0.0%</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 1: Infrastructure Overview Telemetry -->
+            <section id="panel-overview">
+                <div class="card shadow-sm border-0 p-4 mb-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-hdd-network-fill text-primary me-2"></i>Platform Infrastructure Channels</h4>
+                    <div class="row g-4 mt-1">
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <p class="mb-2"><i class="bi bi-circle-fill text-success me-2 small"></i> Database Telemetry: <strong class="text-success">ONLINE</strong></p>
+                                <p class="mb-2"><i class="bi bi-circle-fill text-success me-2 small"></i> Spring Boot Hikari Pool: <strong class="text-success">ACTIVE (10 Connections)</strong></p>
+                                <p class="mb-0"><i class="bi bi-circle-fill text-success me-2 small"></i> Hibernate JPA Persistence: <strong class="text-success">SYNCHRONIZED</strong></p>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 bg-body-tertiary">
+                                <p class="mb-2"><i class="bi bi-cpu me-2 text-primary"></i> Server Architecture: <strong class="text-primary">Java VM (v17+)</strong></p>
+                                <p class="mb-2"><i class="bi bi-server me-2 text-primary"></i> Ports Operational: <strong class="text-primary">8081 (Web/API)</strong></p>
+                                <p class="mb-0"><i class="bi bi-shield-check me-2 text-primary"></i> Spring Security: <strong class="text-primary">MOCK DATA GATEWAY Active</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel 2: User Account Matrix (CRUD) -->
+            <section id="panel-user-mgmt" class="d-none">
+                <div class="card shadow-sm border-0 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h4 class="fw-bold mb-0"><i class="bi bi-person-lines-fill text-success me-2"></i>System Accounts Roster Ecosystem</h4>
+                        <button class="btn btn-primary rounded-pill btn-sm px-3" onclick="openUserModal(false)"><i class="bi bi-person-plus-fill me-2"></i>Create New Account</button>
+                    </div>
+
+                    <!-- Search and Filter Panel -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-md-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="user-search-input" placeholder="Search by name or email..." oninput="filterUserMatrix()">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <select class="form-select form-select-sm" id="user-role-filter" onchange="filterUserMatrix()">
+                                <option value="ALL">All Roles</option>
+                                <option value="STUDENT">Student Scholar</option>
+                                <option value="FACULTY">Faculty Instructor</option>
+                                <option value="ADMIN">System Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <select class="form-select form-select-sm" id="user-status-filter" onchange="filterUserMatrix()">
+                                <option value="ALL">All Statuses</option>
+                                <option value="ACTIVE">Active Only</option>
+                                <option value="INACTIVE">Deactivated Only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="user-mgmt-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email Address</th>
+                                    <th>Role Privilege</th>
+                                    <th>Account Status</th>
+                                    <th>Action Control Matrix</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Loaded dynamically via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel 3: Global Test Schedules -->
+            <section id="panel-global-tests" class="d-none">
+                <div class="card shadow-sm border-0 p-4">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-intersect text-info me-2"></i>Global Active Scheduled Assessments</h4>
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="global-tests-table">
+                            <thead>
+                                <tr>
+                                    <th>Assessment ID</th>
+                                    <th>Title &amp; Details</th>
+                                    <th>Point Value</th>
+                                    <th>Duration Window</th>
+                                    <th>Instructed By</th>
+                                    <th>Action Control Matrix</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${tests.isEmpty()}">
+                                    <td colspan="6" class="text-center py-4 text-muted">No scheduled assessments found.</td>
+                                </tr>
+                                <tr th:each="t : ${tests}">
+                                    <td th:text="${t.id}">0</td>
+                                    <td>
+                                        <strong th:text="${t.title}">Mock Exam</strong>
+                                        <div class="text-muted small" th:text="${t.questions.iterator().next()?.subject ?: 'General'}">Subject</div>
+                                    </td>
+                                    <td th:text="${t.totalMarks} + ' Points'">10 Points</td>
+                                    <td th:text="${t.duration} + ' Mins'">30 Mins</td>
+                                    <td><strong th:text="${t.faculty.name}">Faculty</strong> (<span th:text="${t.faculty.department}">CS</span>)</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <!-- FIX 3: btn-group + gap-1 conflict; use d-flex gap-1 instead -->
+                                            <button class="btn btn-sm btn-outline-primary rounded" title="Preview Test Schema" th:onclick="'previewScheduledTest(' + ${t.id} + ')'"><i class="bi bi-eye-fill"></i></button>
+                                            <button class="btn btn-sm btn-outline-success rounded" title="Performance Analysis" th:onclick="'viewTestAnalysis(' + ${t.id} + ')'"><i class="bi bi-graph-up"></i></button>
+                                            <form th:action="@{/admin/delete-test}" method="POST" class="d-inline">
+                                                <input type="hidden" name="testId" th:value="${t.id}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded" title="Revoke Assessment" onclick="return confirm('Purge this scheduled test?')"><i class="bi bi-trash-fill"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Modal: User Account Formulation Form (Add / Edit) -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="userModalTitle"><i class="bi bi-person-plus-fill me-2"></i>Add Platform Profile</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/admin/create-user}" method="POST" id="user-submit-form">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="id" id="user-id-field">
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-medium">Full Name</label>
+                        <input type="text" class="form-control" name="name" id="user-name" required placeholder="Dr. Aris Vance">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-medium">Email Address</label>
+                        <input type="email" class="form-control" name="email" id="user-email" required placeholder="vance@university.edu">
+                    </div>
+                    <div class="mb-3" id="password-group">
+                        <label class="form-label text-muted small fw-medium">Security Password</label>
+                        <input type="password" class="form-control" name="password" id="user-password" placeholder="••••••••">
+                        <div class="form-text text-muted small" id="password-help">For security safety, please establish a strong password.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-medium">System Role Access</label>
+                        <select class="form-select" name="role" id="user-role" onchange="toggleFacultyFields()">
+                            <option value="STUDENT">Student Scholar</option>
+                            <option value="FACULTY">Faculty Instructor</option>
+                            <option value="ADMIN">SysAdmin Manager</option>
+                        </select>
+                    </div>
+
+                    <!-- Additional Faculty fields -->
+                    <div class="row g-2 mb-3 d-none" id="faculty-fields">
+                        <div class="col-6">
+                            <label class="form-label text-muted small fw-medium">Department</label>
+                            <input type="text" class="form-control" name="department" id="user-dept" placeholder="Computer Science" value="Computer Science">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label text-muted small fw-medium">Specialization</label>
+                            <input type="text" class="form-control" name="specialization" id="user-special" placeholder="Algorithms" value="General">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold" id="modal-submit-btn">Save Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Test Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="previewModalTitle"><i class="bi bi-eye-fill me-2"></i>Assessment Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="previewModalBody">
+                <!-- Loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Test Analysis Report Modal -->
+<div class="modal fade" id="analysisModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="analysisModalTitle"><i class="bi bi-graph-up me-2"></i>Performance Analysis &amp; Telemetry</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="analysisModalBody">
+                <!-- Loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Dismiss Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- FIX 4: Correct Thymeleaf inline JS syntax — use /*[[${var}]]*/ with a JS fallback -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const usersList = /*[[${users}]]*/ [];
+    const testsList = /*[[${tests}]]*/ [];
+    const testAnalysisData = /*[[${testAnalysis}]]*/ {};
+    /*]]>*/
+</script>
+
+<script>
+    // Theme switching
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    };
+
+    const toggleTheme = () => {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        loadUserMatrix();
+    });
+
+    // Navigation Tab Switching
+    const switchTab = (tabName) => {
+        const tabs = ['overview', 'user-mgmt', 'global-tests'];
+        tabs.forEach(t => {
+            document.getElementById(`panel-${t}`).classList.add('d-none');
+            document.getElementById(`tab-${t}-btn`).classList.remove('active');
+        });
+        document.getElementById(`panel-${tabName}`).classList.remove('d-none');
+        document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+    };
+
+    // User CRUD Module
+    function loadUserMatrix() {
+        filterUserMatrix();
+    }
+
+    function filterUserMatrix() {
+        const query = document.getElementById('user-search-input').value.toLowerCase().trim();
+        const role = document.getElementById('user-role-filter').value;
+        const status = document.getElementById('user-status-filter').value;
+
+        const filtered = usersList.filter(user => {
+            const nameMatch = user.name && user.name.toLowerCase().includes(query);
+            const emailMatch = user.email && user.email.toLowerCase().includes(query);
+            const searchMatch = query === '' || nameMatch || emailMatch;
+            const roleMatch = role === 'ALL' || (user.role && user.role.toUpperCase() === role);
+
+            let statusMatch = true;
+            if (status === 'ACTIVE') statusMatch = user.active === true;
+            if (status === 'INACTIVE') statusMatch = user.active === false;
+
+            return searchMatch && roleMatch && statusMatch;
+        });
+
+        renderUserMatrix(filtered);
+    }
+
+    function renderUserMatrix(data) {
+        const tbody = document.querySelector('#user-mgmt-table tbody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No matching platform user profiles found.</td></tr>`;
+        } else {
+            data.forEach((user) => {
+                const index = usersList.findIndex(u => u.id === user.id);
+                const statusClass = user.active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
+                const statusText = user.active ? 'Active' : 'Deactivated';
+                const activeToggleIcon = user.active ? 'bi-shield-slash' : 'bi-shield-check';
+                const activeToggleTitle = user.active ? 'Deactivate' : 'Activate';
+                const roleColor = user.role === 'ADMIN' ? 'text-danger fw-bold' : (user.role === 'FACULTY' ? 'text-primary fw-bold' : 'text-muted fw-bold');
+
+                tbody.innerHTML += `<tr>
+                    <td>${user.id}</td>
+                    <td><strong>${user.name}</strong></td>
+                    <td>${user.email}</td>
+                    <td><span class="${roleColor}">${user.role}</span></td>
+                    <td><span class="badge ${statusClass} rounded-pill">${statusText}</span></td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-warning rounded" title="Edit Profile" onclick="openUserModal(true, ${index})"><i class="bi bi-pencil-fill"></i></button>
+
+                            <form action="/admin/delete-user" method="POST" class="d-inline" onsubmit="return confirm('Purge user account permanently?')">
+                                <input type="hidden" name="id" value="${user.id}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded" title="Delete Profile"><i class="bi bi-trash-fill"></i></button>
+                            </form>
+
+                            <form action="/admin/toggle-user-status" method="POST" class="d-inline">
+                                <input type="hidden" name="id" value="${user.id}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary rounded" title="${activeToggleTitle}"><i class="bi ${activeToggleIcon}"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        }
+    }
+
+    function toggleFacultyFields() {
+        const role = document.getElementById('user-role').value;
+        const facultyFields = document.getElementById('faculty-fields');
+        facultyFields.classList.toggle('d-none', role !== 'FACULTY');
+    }
+
+    function openUserModal(edit = false, index = null) {
+        document.getElementById('user-submit-form').reset();
+        document.getElementById('faculty-fields').classList.add('d-none');
+
+        const titleEl = document.getElementById('userModalTitle');
+        const passHelp = document.getElementById('password-help');
+        const passInput = document.getElementById('user-password');
+        const formEl = document.getElementById('user-submit-form');
+
+        if (edit && index !== null) {
+            const user = usersList[index];
+            formEl.setAttribute('action', '/admin/update-user');
+            titleEl.innerHTML = `<i class="bi bi-pencil-square me-2"></i>Edit Platform Profile`;
+            document.getElementById('user-id-field').value = user.id;
+            document.getElementById('user-name').value = user.name;
+            document.getElementById('user-email').value = user.email;
+            document.getElementById('user-role').value = user.role;
+
+            passInput.required = false;
+            passHelp.innerText = 'Leave empty to keep existing password.';
+
+            if (user.role === 'FACULTY') {
+                document.getElementById('faculty-fields').classList.remove('d-none');
+                document.getElementById('user-dept').value = user.department || 'Computer Science';
+                document.getElementById('user-special').value = user.specialization || 'General';
+            }
+        } else {
+            formEl.setAttribute('action', '/admin/create-user');
+            titleEl.innerHTML = `<i class="bi bi-person-plus-fill me-2"></i>Add Platform Profile`;
+            document.getElementById('user-id-field').value = '';
+            passInput.required = true;
+            passHelp.innerText = 'Please set a secure password.';
+        }
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('userModal')).show();
+    }
+
+    // Preview Test Schema
+    function previewScheduledTest(id) {
+        const test = testsList.find(t => t.id === id);
+        const body = document.getElementById('previewModalBody');
+
+        if (!test) {
+            body.innerHTML = '<div class="alert alert-danger">Assessment details not found.</div>';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('previewModal')).show();
+            return;
+        }
+
+        let questionsHtml = '';
+        if (!test.questions || test.questions.length === 0) {
+            questionsHtml = '<div class="alert alert-warning">No questions assigned.</div>';
+        } else {
+            test.questions.forEach((q, idx) => {
+                let optionsHtml = '';
+                if (q.options && q.options.length > 0) {
+                    optionsHtml = '<div class="row g-2 mt-1">';
+                    q.options.forEach(opt => {
+                        const correctIcon = opt.correct ? '<i class="bi bi-check-circle-fill text-success me-2"></i>' : '<i class="bi bi-circle text-muted me-2"></i>';
+                        const correctClass = opt.correct ? 'border-success bg-success bg-opacity-10' : '';
+                        optionsHtml += `
+                            <div class="col-12 col-md-6">
+                                <div class="p-2 border rounded d-flex align-items-center ${correctClass}">
+                                    ${correctIcon} <span class="small">${opt.optionText}</span>
+                                </div>
+                            </div>`;
+                    });
+                    optionsHtml += '</div>';
+                }
+
+                questionsHtml += `
+                    <div class="card p-3 mb-3 border-0 bg-body-tertiary">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-primary">Question ${idx + 1}</span>
+                            <span class="badge bg-success">${q.marks} Marks</span>
+                        </div>
+                        <div class="fw-semibold text-body mb-2">${q.question}</div>
+                        ${optionsHtml}
+                    </div>`;
+            });
+        }
+
+        body.innerHTML = `
+            <div class="mb-4 pb-3 border-bottom">
+                <h4 class="fw-bold text-primary mb-1">${test.title}</h4>
+                <div class="row g-3 mt-2">
+                    <div class="col-4"><div class="p-2 border rounded text-center"><strong>Duration:</strong> ${test.duration} Mins</div></div>
+                    <div class="col-4"><div class="p-2 border rounded text-center"><strong>Marks:</strong> ${test.totalMarks} Pts</div></div>
+                    <div class="col-4"><div class="p-2 border rounded text-center"><strong>Questions:</strong> ${test.questions ? test.questions.length : 0}</div></div>
+                </div>
+            </div>
+            ${questionsHtml}`;
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('previewModal')).show();
+    }
+
+    // FIX 5: testAnalysisData is a Map/Object keyed by test ID (string keys in JS),
+    // so look up by String(id) to handle numeric vs string key mismatch
+    function viewTestAnalysis(id) {
+        const body = document.getElementById('analysisModalBody');
+        const analysis = testAnalysisData[String(id)] || testAnalysisData[id];
+
+        if (!analysis) {
+            body.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <h5>No submission reports or metrics calculated for this assessment.</h5>
+                    <p class="mb-0">Analytics are compiled automatically when student scholars submit papers.</p>
+                </div>`;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('analysisModal')).show();
+            return;
+        }
+
+        let rosterHtml = '';
+        if (!analysis.results || analysis.results.length === 0) {
+            rosterHtml = '<tr><td colspan="5" class="text-center py-4 text-muted">No submissions logged yet.</td></tr>';
+        } else {
+            analysis.results.forEach((r, idx) => {
+                const badgeClass = r.percentage >= 50 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
+                const statusText = r.percentage >= 50 ? 'PASSED' : 'FAILED';
+                rosterHtml += `<tr>
+                    <td>${idx + 1}</td>
+                    <td><strong>${r.studentName}</strong><div class="text-muted small">${r.studentEmail}</div></td>
+                    <td><strong class="text-primary">${r.score}</strong> / ${analysis.totalMarks}</td>
+                    <td><span class="badge ${badgeClass} rounded-pill">${statusText} (${r.percentage}%)</span></td>
+                    <td><span class="text-success"><i class="bi bi-check-circle me-1"></i>${r.correctCount}</span> | <span class="text-danger"><i class="bi bi-x-circle me-1"></i>${r.incorrectCount}</span></td>
+                </tr>`;
+            });
+        }
+
+        body.innerHTML = `
+            <div class="row g-4 mb-4 pb-3 border-bottom">
+                <div class="col-12 col-md-3"><div class="p-3 border rounded text-center"><h6>Submissions</h6><h3 class="fw-bold text-success">${analysis.completedCount}</h3></div></div>
+                <div class="col-12 col-md-3"><div class="p-3 border rounded text-center"><h6>Class Average</h6><h3 class="fw-bold text-primary">${analysis.averageScore}%</h3></div></div>
+                <div class="col-12 col-md-3"><div class="p-3 border rounded text-center"><h6>High Score</h6><h3 class="fw-bold text-warning">${analysis.highScore}%</h3></div></div>
+                <div class="col-12 col-md-3"><div class="p-3 border rounded text-center"><h6>Low Score</h6><h3 class="fw-bold text-danger">${analysis.lowScore}%</h3></div></div>
+            </div>
+            <h6 class="text-uppercase text-muted fw-bold mb-3 small">Assessment Submissions Roster</h6>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Scholar Name</th>
+                            <th>Points</th>
+                            <th>Status/Percent</th>
+                            <th>Ratio (Correct / Incorrect)</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rosterHtml}</tbody>
+                </table>
+            </div>`;
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('analysisModal')).show();
+    }
+</script>
+</body>
+</html>
